@@ -305,6 +305,11 @@ int hugetlb_setup_memory(struct vmctx *ctx)
 
 	printf("mmap ptr 0x%p -> baseaddr 0x%p\n", ptr, ctx->baseaddr);
 
+	/* ioctl to set mem map info
+	 * 	- baseaddr
+	 */
+	vm_set_meminfo(ctx);
+
 	/* mmap lowmem */
 	if (mmap_hugetlbfs_lowmem(ctx) < 0)
 		goto err;

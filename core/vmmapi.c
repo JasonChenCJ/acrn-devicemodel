@@ -313,6 +313,12 @@ vm_get_memflags(struct vmctx *ctx)
 	return ctx->memflags;
 }
 
+int
+vm_set_meminfo(struct vmctx *ctx)
+{
+	return ioctl(ctx->fd, IC_SET_MEMINFO, ctx->baseaddr);
+}
+
 static int
 vm_alloc_set_memseg(struct vmctx *ctx, int segid, size_t len,
 		vm_paddr_t gpa, int prot, char *base, char **ptr)
