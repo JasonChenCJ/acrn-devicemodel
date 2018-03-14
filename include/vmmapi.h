@@ -39,6 +39,25 @@
  */
 #define	VMMAPI_VERSION	0103	/* 2 digit major followed by 2 digit minor */
 
+#define	MB	(1024 * 1024UL)
+#define	GB	(1024 * 1024 * 1024UL)
+
+#define ALIGN_UP(x, align)	(((x) + ((align)-1)) & ~((align)-1))
+#define ALIGN_DOWN(x, align)	((x) & ~((align)-1))
+
+#define HP_LV1		0
+#define HP_LV2		1
+#define HP_LV_MAX 	2
+
+#define MAX_PATH_LEN 128
+
+struct hp_handler {
+	char path[MAX_PATH_LEN];
+	int fd;
+	size_t lowmem;
+	size_t highmem;
+};
+
 struct iovec;
 
 struct vmctx {
@@ -54,6 +73,7 @@ struct vmctx {
 	char    *baseaddr;
 	char    *name;
 	uuid_t	vm_uuid;
+	struct  hp_handler hp[HP_LV_MAX]; /* 2 hugepage level */
 };
 
 /*
@@ -110,6 +130,9 @@ void	vm_destroy(struct vmctx *ctx);
 int	vm_parse_memsize(const char *optarg, size_t *memsize);
 int	vm_setup_memory(struct vmctx *ctx, size_t len, enum vm_mmap_style s);
 void	vm_unsetup_memory(struct vmctx *ctx);
+int	check_hugetlb_support(void);
+int	hugetlb_setup_memory(struct vmctx *ctx);
+void	hugetlb_unsetup_memory(struct vmctx *ctx);
 void	*vm_map_gpa(struct vmctx *ctx, vm_paddr_t gaddr, size_t len);
 uint32_t vm_get_lowmem_limit(struct vmctx *ctx);
 void	vm_set_lowmem_limit(struct vmctx *ctx, uint32_t limit);

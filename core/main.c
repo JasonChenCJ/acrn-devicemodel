@@ -63,9 +63,6 @@
 
 #define GUEST_NIO_PORT		0x488	/* guest upcalls via i/o port */
 
-#define MB		(1024UL * 1024)
-#define GB		(1024UL * MB)
-
 typedef int (*vmexit_handler_t)(struct vmctx *,
 		struct vhm_request *, int *vcpu);
 
@@ -74,6 +71,7 @@ char *vmname;
 int guest_ncpus;
 char *guest_uuid_str;
 bool stdio_in_use;
+bool hugetlb;
 
 static int guest_vmexit_on_hlt, guest_vmexit_on_pause;
 static int virtio_msix = 1;
@@ -125,7 +123,7 @@ static void
 usage(int code)
 {
 	fprintf(stderr,
-		"Usage: %s [-abehuwxACHPSWY] [-c vcpus] [-g <gdb port>] [-l <lpc>]\n"
+		"Usage: %s [-abehuwxACHPSTWY] [-c vcpus] [-g <gdb port>] [-l <lpc>]\n"
 		"       %*s [-m mem] [-p vcpu:hostcpu] [-s <pci>] [-U uuid] <vm>\n"
 		"       -a: local apic is in xAPIC mode (deprecated)\n"
 		"       -A: create ACPI tables\n"
@@ -146,6 +144,7 @@ usage(int code)
 		"       -U: uuid\n"
 		"       -w: ignore unimplemented MSRs\n"
 		"       -W: force virtio to use single-vector MSI\n"
+		"       -T: use hugetlb for memory allocation\n"
 		"       -x: local apic is in x2APIC mode\n"
 		"       -Y: disable MPtable generation\n"
 		"       -k: kernel image path\n"
@@ -565,11 +564,12 @@ main(int argc, char *argv[])
 	rtc_localtime = 1;
 	memflags = 0;
 	quit_vm_loop = 0;
+	hugetlb = 0;
 
 	if (signal(SIGINT, sig_handler_term) == SIG_ERR)
 		fprintf(stderr, "cannot register handler for SIGINT\n");
 
-	optstr = "abehuwxACHIMPSWYvk:r:B:p:g:c:s:m:l:U:G:";
+	optstr = "abehuwxACHIMPSTWYvk:r:B:p:g:c:s:m:l:U:G:";
 	while ((c = getopt(argc, argv, optstr)) != -1) {
 		switch (c) {
 		case 'a':
@@ -646,6 +646,10 @@ main(int argc, char *argv[])
 			break;
 		case 'W':
 			virtio_msix = 0;
+			break;
+		case 'T':
+			if (check_hugetlb_support())
+				hugetlb = 1;
 			break;
 		case 'x':
 			x2apic_mode = 1;
